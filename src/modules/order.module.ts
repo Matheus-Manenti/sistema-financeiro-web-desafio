@@ -4,7 +4,7 @@ import { OrderService } from 'src/service/OrderService';
 import { ClientsModule } from 'prisma/ClientModule';
 
 @Module({
-  imports: [ClientsModule], // Importa o ClientsModule para usar o ClientService
+  imports: [ClientsModule], 
   controllers: [OrderController],
   providers: [OrderService],
 })
