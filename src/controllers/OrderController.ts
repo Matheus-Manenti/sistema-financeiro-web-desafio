@@ -17,11 +17,15 @@ import { OrderRequestDTO } from 'src/dtos/order/OrderRequestDTO';
 import { OrderResponseDTO } from 'src/dtos/order/OrderResponseDTO';
 import { UpdateOrderRequestDTO } from 'src/dtos/order/UpdateOrderRequestDTO';
 import { OrderService } from 'src/service/OrderService';
+import { ClientService } from 'src/service/ClientService';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('orders')
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly clientService: ClientService,
+  ) {}
 
   @Post('/create')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.USER)
@@ -49,8 +53,10 @@ export class OrderController {
   @HttpCode(HttpStatus.OK)
   async togglePaymentStatus(
     @Param('orderId') orderId: string,
-  ): Promise<OrderResponseDTO> {
-    return this.orderService.togglePaymentStatus(orderId);
+  ): Promise<{ order: OrderResponseDTO, client: any }> {
+    const order = await this.orderService.togglePaymentStatus(orderId);
+    const client = await this.clientService.findById(order.clientId);
+    return { order, client };
   }
 
   @Patch('update/:orderId')

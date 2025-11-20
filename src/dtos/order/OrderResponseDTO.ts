@@ -14,6 +14,8 @@ export class OrderResponseDTO {
   createdAt: Date;
   updatedAt: Date;
   clientId: string;
+  startDateFormatted?: string;
+  endDateFormatted?: string;
 
   constructor(order: Order, validityStatus: ValidityStatus) {
     this.id = order.id;
@@ -28,5 +30,7 @@ export class OrderResponseDTO {
     this.createdAt = order.createdAt;
     this.updatedAt = order.updatedAt;
     this.clientId = order.clientId;
+    this.startDateFormatted = '';
+    this.endDateFormatted = '';
   }
 }

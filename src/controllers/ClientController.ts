@@ -7,6 +7,7 @@ import { ClientService } from 'src/service/ClientService';
 import { RolesGuard } from 'src/auth/RolesGuard';
 import { JwtAuthGuard } from 'src/auth/JwtAuthGuard';
 import { Roles } from 'src/auth/RolesDecorator';
+import { FinancialStatus } from 'src/dtos/client/FinancialStatus';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('clients')
@@ -48,5 +49,23 @@ export class ClientController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.USER)
   async toggleStatus(@Param('id') id: string): Promise<ClientResponseDTO> {
     return this.clientService.toggleStatus(id);
+  }
+
+  @Patch('/update-financial-status/:id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async updateFinancialStatus(
+    @Param('id') clientId: string,
+    @Body() data: { financialStatus: string }
+  ): Promise<ClientResponseDTO> {
+    
+    return this.clientService.updateFinancialStatus(clientId, data.financialStatus as FinancialStatus);
+  }
+
+  @Patch('/toggle-financial-status/:id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async toggleFinancialStatus(@Param('id') clientId: string): Promise<ClientResponseDTO> {
+    return this.clientService.toggleFinancialStatus(clientId);
   }
 }

@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Order } from '@prisma/client';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { PrismaService } from 'prisma/PrismaService';
 import { OrderRequestDTO } from '../dtos/order/OrderRequestDTO';
 import { OrderResponseDTO } from '../dtos/order/OrderResponseDTO';
@@ -10,9 +12,6 @@ import { ClientService } from './ClientService';
 
 @Injectable()
 export class OrderService {
-  findByClientId(clientId: string): OrderResponseDTO[] | PromiseLike<OrderResponseDTO[]> {
-    throw new Error('Method not implemented.');
-  }
   constructor(
     private readonly prisma: PrismaService,
     private readonly clientService: ClientService,
@@ -138,6 +137,21 @@ export class OrderService {
     return this._mapToOrderResponseDTO(updatedOrder);
   }
 
+  async findByClientId(clientId: string): Promise<OrderResponseDTO[]> {
+    const orders = await this.prisma.order.findMany({
+      where: { clientId },
+      orderBy: { startDate: 'asc' }, // Mantém a ordenação apenas pela data de início
+    });
+
+    return orders.map((order) => {
+      const orderDTO = this._mapToOrderResponseDTO(order);
+      // Formata as datas para o formato brasileiro
+      orderDTO.startDateFormatted = format(new Date(order.startDate), 'dd/MM/yyyy', { locale: ptBR });
+      orderDTO.endDateFormatted = format(new Date(order.endDate), 'dd/MM/yyyy', { locale: ptBR });
+      return orderDTO;
+    });
+  }
+
   // Função auxiliar para atualizar o campo financialStatus do cliente no banco
   private async _updateClientFinancialStatus(clientId: string) {
     const client = await this.prisma.client.findUnique({
@@ -148,16 +162,12 @@ export class OrderService {
     // Lógica igual ao ClientService
     const now = new Date();
     const hasVencidaOrder = client.orders.some(order => {
-      let validityStatus;
-      if (now < order.startDate) {
-        validityStatus = 'FUTURA';
-      } else if (now > order.endDate && !order.isPaid) {
-        validityStatus = 'VENCIDA';
-      } else {
-        validityStatus = 'VIGENTE';
-      }
-      return validityStatus === 'VENCIDA';
+      const now = new Date();
+      const isVencida = now > order.endDate && !order.isPaid; // Verifica se a ordem está vencida e não paga
+      return isVencida;
     });
+
+    // Atualiza o estado financeiro do cliente
     const financialStatus = hasVencidaOrder ? 'INADIMPLENTE' : 'ADIMPLENTE';
     await this.prisma.client.update({
       where: { id: clientId },
